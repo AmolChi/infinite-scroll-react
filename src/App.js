@@ -17,6 +17,12 @@ function App() {
   const [currentExp, setCurrentExp] = useState(0);
   const [currentRemoteValue,setCurrentRemoteValue] = useState([]);
   const [currentMinPay, setCurrentMinPay] = useState(0);
+  const [searchComp,setSearchComp] = useState("");
+
+  const handleSearchComp = (event) =>{
+    setSearchComp(event.target.value);
+  }
+
 
   const getData = async () => {
     const myHeaders = new Headers();
@@ -70,14 +76,26 @@ function App() {
       newData = newData.filter((d)=>d.minExp>=currentExp)
     }
     if(currentMinPay>0){
-
+      newData = newData.filter((d)=>d.minJdSalary>=currentMinPay)
     }
     if(currentRemoteValue.length>0){
+      newData = newData.map((d)=>{
+        if(currentRemoteValue.includes('Remote') && d.location === 'remote')
+            return d;
+        if(currentRemoteValue.includes('Hybrid') && d.location.includes('remote'))
+            return d;
+        if(currentRemoteValue.includes('In-Office') && d.location !== 'remote')
+            return d;
+        return null;
+      }).filter(d=>d!==null);
+    }
 
+    if(searchComp.length>0){
+      newData = data.filter(d=>d.companyName.includes(searchComp));
     }
 
     setSendData(newData);
-  },[data,currentRoles,currentExp,currentMinPay,currentRemoteValue]);
+  },[data,currentRoles,currentExp,currentMinPay,currentRemoteValue,searchComp]);
 
   useEffect(() => {
     getData();
@@ -186,7 +204,7 @@ function App() {
           )}
           sx={{ minWidth: 300 }}
         />
-        <TextField label="Search Company Name" />
+        <TextField label="Search Company Name" value={searchComp} onChange={handleSearchComp}/>
       </div>
       {sendData && <div className="cards">
           {
