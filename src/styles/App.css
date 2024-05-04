@@ -5,3 +5,9 @@
     flex-wrap: wrap;
     gap: 2%;
 }
+
+.cards{
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+}

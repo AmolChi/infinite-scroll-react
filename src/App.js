@@ -1,6 +1,7 @@
 import { Autocomplete, TextField } from "@mui/material";
 import "./styles/App.css";
 import { useEffect, useState } from "react";
+import Card from './components/Card';
 
 function App() {
   const noEmp = ["0-10", "10-20", "20-50"];
@@ -45,7 +46,8 @@ function App() {
             if (d.jobRole != null) {
               return d.jobRole;
             }
-          })
+            return null;
+          }).filter(d=>d!==null)
         ),
       ];
 
@@ -137,6 +139,13 @@ function App() {
           sx={{ minWidth: 300 }}
         />
         <TextField label="Search Company Name" />
+      </div>
+      <div className="cards">
+          {
+            data.map((d,idx)=>(
+              <Card data = {d}/>
+            ))
+          }
       </div>
     </>
   );
