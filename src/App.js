@@ -4,14 +4,19 @@ import { useEffect, useState } from "react";
 import Card from './components/Card';
 
 function App() {
-  const noEmp = ["0-10", "10-20", "20-50"];
+  const noEmp = ["0-10","11-20", "21-50","51-100","101-250","251-500","500+"];
   const rem = ["Remote", "Hybrid", "In-Office"];
   //const basePay = [0, 10, 20, 30, 40, 50, 60, 70];
 
   const [data, setData] = useState(null);
+  const [sendData,setSendData] = useState(null);
   const [roles, setRole] = useState([]);
   const [exp, setExp] = useState([]);
   const [basePay,setBasePay] = useState([]);
+  const [currentRoles,setCurrentRoles] = useState([]);
+  const [currentExp, setCurrentExp] = useState(0);
+  const [currentRemoteValue,setCurrentRemoteValue] = useState([]);
+  const [currentMinPay, setCurrentMinPay] = useState(0);
 
   const getData = async () => {
     const myHeaders = new Headers();
@@ -33,6 +38,46 @@ function App() {
     const Data = await response.json();
     setData(Data.jdList);
   };
+
+  const handleRoleChange = (event,newValue) =>{
+    setCurrentRoles(newValue);
+  }
+
+  const handleExpChange = (event,newValue)=>{
+    if(newValue === null)
+      setCurrentExp(0);
+    else
+      setCurrentExp(newValue);
+  }
+
+  const handleRemoteChange = (event,newValue)=>{
+    setCurrentRemoteValue(newValue);
+  }
+
+  const handleMinBasePay = (event,newValue)=>{
+    if(newValue === null)
+        setCurrentMinPay(0);
+    else
+      setCurrentMinPay(newValue);
+  }
+
+  useEffect(()=>{
+    var newData = data;
+    if(currentRoles.length !== 0){
+      newData = newData.filter((d)=>currentRoles.includes(d.jobRole))
+    }
+    if(currentExp>0){
+      newData = newData.filter((d)=>d.minExp>=currentExp)
+    }
+    if(currentMinPay>0){
+
+    }
+    if(currentRemoteValue.length>0){
+
+    }
+
+    setSendData(newData);
+  },[data,currentRoles,currentExp,currentMinPay,currentRemoteValue]);
 
   useEffect(() => {
     getData();
@@ -56,7 +101,7 @@ function App() {
       );
 
       const maxExp = Math.max(
-        ...new Set(data.map((d) => d.maxExp).filter((d) => d !== null))
+        ...new Set(data.map((d) => d.minExp).filter((d) => d !== null))
       );
 
       var minSal = Math.min(
@@ -83,7 +128,6 @@ function App() {
       setBasePay(salArr);
       setExp(exp);
       setRole(diffRoles);
-      console.log(data);
     }
   }, [data]);
 
@@ -98,6 +142,7 @@ function App() {
           id="multiple-limit-tags"
           options={roles}
           getOptionLabel={(option) => option}
+          onChange={handleRoleChange}
           renderInput={(params) => (
             <TextField {...params} label="Role" placeholder="" />
           )}
@@ -118,6 +163,7 @@ function App() {
           id="multiple-limit-tags"
           options={exp}
           getOptionLabel={(option) => String(option)}
+          onChange={handleExpChange}
           renderInput={(params) => <TextField {...params} label="Experience" />}
           sx={{ minWidth: 150 }}
         />
@@ -126,6 +172,7 @@ function App() {
           id="multiple-limit-tags"
           options={rem}
           getOptionLabel={(option) => option}
+          onChange={handleRemoteChange}
           renderInput={(params) => <TextField {...params} label="Remote" />}
           sx={{ minWidth: 150 }}
         />
@@ -133,6 +180,7 @@ function App() {
           id="multiple-limit-tags"
           options={basePay}
           getOptionLabel={(option) => String(option)}
+          onChange={handleMinBasePay}
           renderInput={(params) => (
             <TextField {...params} label="Minimum Base Pay Salary" />
           )}
@@ -140,13 +188,13 @@ function App() {
         />
         <TextField label="Search Company Name" />
       </div>
-      <div className="cards">
+      {sendData && <div className="cards">
           {
-            data.map((d,idx)=>(
+            sendData.map((d,idx)=>(
               <Card data = {d}/>
             ))
           }
-      </div>
+      </div>}
     </>
   );
 }
