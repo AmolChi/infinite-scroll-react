@@ -3,15 +3,16 @@ import "./styles/App.css";
 import { useEffect, useState } from "react";
 
 function App() {
-  const roles = ["frontend", "backend", "dba"];
   const noEmp = ["0-10", "10-20", "20-50"];
-  const exp = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
   const rem = ["Remote", "Hybrid", "In-Office"];
-  const basePay = ["0L", "10L", "20L"];
+  //const basePay = [0, 10, 20, 30, 40, 50, 60, 70];
 
-  const [data,setData] =  useState(null);
+  const [data, setData] = useState(null);
+  const [roles, setRole] = useState([]);
+  const [exp, setExp] = useState([]);
+  const [basePay,setBasePay] = useState([]);
 
-  useEffect(() => {
+  const getData = async () => {
     const myHeaders = new Headers();
     myHeaders.append("Content-Type", "application/json");
     const body = JSON.stringify({
@@ -24,23 +25,70 @@ function App() {
       body,
     };
 
-    fetch(
+    const response = await fetch(
       "https://api.weekday.technology/adhoc/getSampleJdJSON",
       requestOptions
-    )
-      .then((res) => res.text())
-      .then((res) => setData(res))
-      .catch((err) => console.log(err));
+    );
+    const Data = await response.json();
+    setData(Data.jdList);
+  };
+
+  useEffect(() => {
+    getData();
   }, []);
 
-  useEffect(()=>{
-    
-  },[data])
+  useEffect(() => {
+    if (data != null) {
+      const diffRoles = [
+        ...new Set(
+          data.map((d) => {
+            if (d.jobRole != null) {
+              return d.jobRole;
+            }
+          })
+        ),
+      ];
 
-  return (
-    (data===null)?
-      <></>
-    :<>
+      const minExp = Math.min(
+        ...new Set(data.map((d) => d.minExp).filter((d) => d !== null))
+      );
+
+      const maxExp = Math.max(
+        ...new Set(data.map((d) => d.maxExp).filter((d) => d !== null))
+      );
+
+      var minSal = Math.min(
+        ...new Set(data.map(d=>d.minJdSalary).filter((d)=>d!==null))
+      )
+      
+      var maxSal = Math.max(
+        ...new Set(data.map(d => d.maxJdSalary).filter((d)=>d!==null))
+      )
+
+      minSal = Math.floor(minSal/10)*10;
+      maxSal = Math.floor(maxSal/10)*10;
+
+      const salArr = Array.from(
+        {length:(maxSal-minSal)/10 + 1},
+        (_,index)=>index*10 + minSal
+      )
+
+      const exp = Array.from(
+        { length: maxExp - minExp + 1 },
+        (_, index) => index + minExp
+      );
+      
+      setBasePay(salArr);
+      setExp(exp);
+      setRole(diffRoles);
+      console.log(data);
+    }
+  }, [data]);
+
+  return data === null ? (
+    <></>
+  ) : (
+    <>
       <div className="searchBox">
         <Autocomplete
           multiple
@@ -67,7 +115,7 @@ function App() {
         <Autocomplete
           id="multiple-limit-tags"
           options={exp}
-          getOptionLabel={(option) => option}
+          getOptionLabel={(option) => String(option)}
           renderInput={(params) => <TextField {...params} label="Experience" />}
           sx={{ minWidth: 150 }}
         />
@@ -82,7 +130,7 @@ function App() {
         <Autocomplete
           id="multiple-limit-tags"
           options={basePay}
-          getOptionLabel={(option) => option}
+          getOptionLabel={(option) => String(option)}
           renderInput={(params) => (
             <TextField {...params} label="Minimum Base Pay Salary" />
           )}
