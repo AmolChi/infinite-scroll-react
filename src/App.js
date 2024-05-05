@@ -1,116 +1,167 @@
-import { Autocomplete, TextField } from "@mui/material";
+import { Autocomplete, Box, TextField } from "@mui/material";
 import "./styles/App.css";
 import { useEffect, useState } from "react";
-import Card from './components/Card';
+import { useDispatch, useSelector } from "react-redux";
+import Card from "./components/Card";
+import { fetchData } from "./store/actions";
+import CircularProgress from "@mui/material/CircularProgress";
 
 function App() {
-  const noEmp = ["0-10","11-20", "21-50","51-100","101-250","251-500","500+"];
+  const dispatch = useDispatch();
+  const data = useSelector((state) => state.data);
+  const loading = useSelector((state) => state.loading);
+  const error = useSelector((state) => state.error);
+  const offset = useSelector((state) => {console.log(state.offset);return state.offset});
+
+  useEffect(() => {
+    dispatch(fetchData(12, 0));
+  }, [dispatch]);
+
+  const handleScroll = () => {
+    console.log(window.innerHeight,document.documentElement.scrollTop,document.documentElement.offsetHeight)
+    if (
+      window.innerHeight + document.documentElement.scrollTop +1 >=
+      document.documentElement.offsetHeight
+    ) {
+      console.log("event called");
+      dispatch(fetchData(12, offset)); // Fetch more data when scrolled to bottom
+    }
+  };
+
+  useEffect(() => {
+    window.addEventListener("scroll", handleScroll);
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+    };
+  });
+
+  const noEmp = [
+    "0-10",
+    "11-20",
+    "21-50",
+    "51-100",
+    "101-250",
+    "251-500",
+    "500+",
+  ];
   const rem = ["Remote", "Hybrid", "In-Office"];
   //const basePay = [0, 10, 20, 30, 40, 50, 60, 70];
 
-  const [data, setData] = useState(null);
-  const [sendData,setSendData] = useState(null);
+  // const [data, setData] = useState(null);
+  const [sendData, setSendData] = useState(null);
   const [roles, setRole] = useState([]);
   const [exp, setExp] = useState([]);
-  const [basePay,setBasePay] = useState([]);
-  const [currentRoles,setCurrentRoles] = useState([]);
+  const [basePay, setBasePay] = useState([]);
+  const [currentRoles, setCurrentRoles] = useState([]);
   const [currentExp, setCurrentExp] = useState(0);
-  const [currentRemoteValue,setCurrentRemoteValue] = useState([]);
+  const [currentRemoteValue, setCurrentRemoteValue] = useState([]);
   const [currentMinPay, setCurrentMinPay] = useState(0);
-  const [searchComp,setSearchComp] = useState("");
+  const [searchComp, setSearchComp] = useState("");
 
-  const handleSearchComp = (event) =>{
+  const handleSearchComp = (event) => {
     setSearchComp(event.target.value);
-  }
-
-
-  const getData = async () => {
-    const myHeaders = new Headers();
-    myHeaders.append("Content-Type", "application/json");
-    const body = JSON.stringify({
-      limit: 10,
-      offset: 0,
-    });
-    const requestOptions = {
-      method: "POST",
-      headers: myHeaders,
-      body,
-    };
-
-    const response = await fetch(
-      "https://api.weekday.technology/adhoc/getSampleJdJSON",
-      requestOptions
-    );
-    const Data = await response.json();
-    setData(Data.jdList);
   };
 
-  const handleRoleChange = (event,newValue) =>{
+  // const getData = async () => {
+  //   const myHeaders = new Headers();
+  //   myHeaders.append("Content-Type", "application/json");
+  //   const body = JSON.stringify({
+  //     limit: 10,
+  //     offset: 0,
+  //   });
+  //   const requestOptions = {
+  //     method: "POST",
+  //     headers: myHeaders,
+  //     body,
+  //   };
+
+  //   const response = await fetch(
+  //     "https://api.weekday.technology/adhoc/getSampleJdJSON",
+  //     requestOptions
+  //   );
+  //   const Data = await response.json();
+  //   setData(Data.jdList);
+  // };
+
+  const handleRoleChange = (event, newValue) => {
     setCurrentRoles(newValue);
-  }
+  };
 
-  const handleExpChange = (event,newValue)=>{
-    if(newValue === null)
-      setCurrentExp(0);
-    else
-      setCurrentExp(newValue);
-  }
+  const handleExpChange = (event, newValue) => {
+    if (newValue === null) setCurrentExp(0);
+    else setCurrentExp(newValue);
+  };
 
-  const handleRemoteChange = (event,newValue)=>{
+  const handleRemoteChange = (event, newValue) => {
     setCurrentRemoteValue(newValue);
-  }
+  };
 
-  const handleMinBasePay = (event,newValue)=>{
-    if(newValue === null)
-        setCurrentMinPay(0);
-    else
-      setCurrentMinPay(newValue);
-  }
+  const handleMinBasePay = (event, newValue) => {
+    if (newValue === null) setCurrentMinPay(0);
+    else setCurrentMinPay(newValue);
+  };
 
-  useEffect(()=>{
+  useEffect(() => {
     var newData = data;
-    if(currentRoles.length !== 0){
-      newData = newData.filter((d)=>currentRoles.includes(d.jobRole))
+    if (currentRoles.length !== 0) {
+      newData = newData.filter((d) => currentRoles.includes(d.jobRole));
     }
-    if(currentExp>0){
-      newData = newData.filter((d)=>d.minExp>=currentExp)
+    if (currentExp > 0) {
+      newData = newData.filter((d) => d.minExp >= currentExp);
     }
-    if(currentMinPay>0){
-      newData = newData.filter((d)=>d.minJdSalary>=currentMinPay)
+    if (currentMinPay > 0) {
+      newData = newData.filter((d) => d.minJdSalary >= currentMinPay);
     }
-    if(currentRemoteValue.length>0){
-      newData = newData.map((d)=>{
-        if(currentRemoteValue.includes('Remote') && d.location === 'remote')
+    if (currentRemoteValue.length > 0) {
+      newData = newData
+        .map((d) => {
+          if (currentRemoteValue.includes("Remote") && d.location === "remote")
             return d;
-        if(currentRemoteValue.includes('Hybrid') && d.location.includes('remote'))
+          if (
+            currentRemoteValue.includes("Hybrid") &&
+            d.location.includes("remote")
+          )
             return d;
-        if(currentRemoteValue.includes('In-Office') && d.location !== 'remote')
+          if (
+            currentRemoteValue.includes("In-Office") &&
+            d.location !== "remote"
+          )
             return d;
-        return null;
-      }).filter(d=>d!==null);
+          return null;
+        })
+        .filter((d) => d !== null);
     }
 
-    if(searchComp.length>0){
-      newData = data.filter(d=>d.companyName.includes(searchComp));
+    if (searchComp.length > 0) {
+      newData = data.filter((d) => d.companyName.toLowerCase().includes(searchComp.toLowerCase()));
     }
 
     setSendData(newData);
-  },[data,currentRoles,currentExp,currentMinPay,currentRemoteValue,searchComp]);
+  }, [
+    data,
+    currentRoles,
+    currentExp,
+    currentMinPay,
+    currentRemoteValue,
+    searchComp,
+  ]);
 
-  useEffect(() => {
-    getData();
-  }, []);
+  // useEffect(() => {
+  //   getData();
+  // }, []);
 
   useEffect(() => {
     if (data != null) {
       const diffRoles = [
         ...new Set(
-          data.map((d) => {
-            if (d.jobRole != null) {
-              return d.jobRole;
-            }
-            return null;
-          }).filter(d=>d!==null)
+          data
+            .map((d) => {
+              if (d.jobRole != null) {
+                return d.jobRole;
+              }
+              return null;
+            })
+            .filter((d) => d !== null)
         ),
       ];
 
@@ -123,26 +174,26 @@ function App() {
       );
 
       var minSal = Math.min(
-        ...new Set(data.map(d=>d.minJdSalary).filter((d)=>d!==null))
-      )
-      
-      var maxSal = Math.max(
-        ...new Set(data.map(d => d.maxJdSalary).filter((d)=>d!==null))
-      )
+        ...new Set(data.map((d) => d.minJdSalary).filter((d) => d !== null))
+      );
 
-      minSal = Math.floor(minSal/10)*10;
-      maxSal = Math.floor(maxSal/10)*10;
+      var maxSal = Math.max(
+        ...new Set(data.map((d) => d.maxJdSalary).filter((d) => d !== null))
+      );
+
+      minSal = Math.floor(minSal / 10) * 10;
+      maxSal = Math.floor(maxSal / 10) * 10;
 
       const salArr = Array.from(
-        {length:(maxSal-minSal)/10 + 1},
-        (_,index)=>index*10 + minSal
-      )
+        { length: (maxSal - minSal) / 10 + 1 },
+        (_, index) => index * 10 + minSal
+      );
 
       const exp = Array.from(
         { length: maxExp - minExp + 1 },
         (_, index) => index + minExp
       );
-      
+
       setBasePay(salArr);
       setExp(exp);
       setRole(diffRoles);
@@ -204,15 +255,26 @@ function App() {
           )}
           sx={{ minWidth: 300 }}
         />
-        <TextField label="Search Company Name" value={searchComp} onChange={handleSearchComp}/>
+        <TextField
+          label="Search Company Name"
+          value={searchComp}
+          onChange={handleSearchComp}
+        />
       </div>
-      {sendData && <div className="cards">
-          {
-            sendData.map((d,idx)=>(
-              <Card data = {d}/>
-            ))
-          }
-      </div>}
+      {sendData && (
+        <div className="cards">
+          {sendData.map((d, idx) => (
+            <Card data={d} />
+          ))}
+        </div>
+      )}
+      {(window.innerHeight,
+      document.documentElement.scrollTop,
+      document.documentElement.offsetHeight) && (
+        <Box sx={{display:"flex",justifyContent:"center"}}>
+          <CircularProgress />
+        </Box>
+      )}
     </>
   );
 }
